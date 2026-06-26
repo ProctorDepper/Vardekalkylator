@@ -134,6 +134,17 @@
   .note b{color:var(--ink);font-weight:600}
   .note hr{border:none;border-top:1px solid var(--line);margin:12px 0}
 
+  /* sector links */
+  .sectors{display:flex;flex-wrap:wrap;gap:9px;margin-top:2px}
+  .sectors a{
+    display:inline-flex;align-items:center;gap:7px;text-decoration:none;
+    background:#fff;border:1px solid var(--line-strong);border-radius:10px;
+    padding:11px 14px;font-size:14px;font-weight:600;color:var(--ink);
+  }
+  .sectors a:active{background:#F0F0EA}
+  .sectors a .arw{color:var(--muted);font-family:var(--mono);font-weight:700}
+  .sector-note{font-size:12px;color:var(--muted);line-height:1.55;margin-top:14px}
+
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -208,6 +219,19 @@
     <div class="k">Den enda fråga som spelar roll</div>
     <div class="big">Dagens kurs förutsätter att vinsten växer <em id="beGrowth">6,3 %</em> per år — för all framtid.</div>
     <div class="sub" id="heroSub">Tror du på mer? Då är aktien billig. Tror du på mindre? Då betalar du för en berättelse marknaden redan tagit ut i förskott.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">Hitta nästa bolag</div>
+    <div class="sectors">
+      <a href="https://finviz.com/screener.ashx?v=121&f=cap_smallover,fa_debteq_u0.5,fa_eps5years_o10,fa_estltgrowth_pos,fa_netmargin_pos,fa_pe_u20,fa_pfcf_u20,fa_roe_o15,sec_industrials&o=pfcf" target="_blank" rel="noopener">Industri <span class="arw">→</span></a>
+      <a href="https://finviz.com/screener.ashx?v=121&f=cap_smallover,fa_debteq_u0.5,fa_eps5years_o10,fa_estltgrowth_pos,fa_netmargin_pos,fa_pe_u20,fa_pfcf_u20,fa_roe_o15,sec_technology&o=pfcf" target="_blank" rel="noopener">Teknik <span class="arw">→</span></a>
+      <a href="https://finviz.com/screener.ashx?v=121&f=cap_smallover,fa_debteq_u0.5,fa_eps5years_o10,fa_estltgrowth_pos,fa_netmargin_pos,fa_pe_u20,fa_pfcf_u20,fa_roe_o15,sec_consumercyclical&o=pfcf" target="_blank" rel="noopener">Sällanköp <span class="arw">→</span></a>
+      <a href="https://finviz.com/screener.ashx?v=121&f=cap_smallover,fa_debteq_u0.5,fa_eps5years_o10,fa_estltgrowth_pos,fa_netmargin_pos,fa_pe_u20,fa_pfcf_u20,fa_roe_o15,sec_consumerdefensive&o=pfcf" target="_blank" rel="noopener">Dagligvaror <span class="arw">→</span></a>
+      <a href="https://finviz.com/screener.ashx?v=121&f=cap_smallover,fa_debteq_u0.5,fa_eps5years_o10,fa_estltgrowth_pos,fa_netmargin_pos,fa_pe_u20,fa_pfcf_u20,fa_roe_o15,sec_healthcare&o=pfcf" target="_blank" rel="noopener">Hälsovård <span class="arw">→</span></a>
+      <a href="https://finviz.com/screener.ashx?v=121&f=cap_smallover,fa_debteq_u0.5,fa_eps5years_o10,fa_estltgrowth_pos,fa_netmargin_pos,fa_pe_u20,fa_pfcf_u20,fa_roe_o15,sec_communicationservices&o=pfcf" target="_blank" rel="noopener">Kommunikation <span class="arw">→</span></a>
+    </div>
+    <div class="sector-note">Öppnar Finviz sorterat på P/FCF (billigast först), redan filtrerat på låg värdering, kvalitet och låg skuld. Sektorerna är de där den här modellen fungerar rakt av — bank, försäkring och gruva är medvetet utelämnade. Räkna EPS som <b>kurs ÷ P/E</b> och använd <b>EPS Next 5Y</b> som tillväxt.</div>
   </div>
 
   <div class="note">
