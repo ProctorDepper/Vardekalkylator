@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Intjäningsvärde</title>
+<style>
+  :root{
+    --bg:#E4E6DF;
+    --panel:#FAFAF7;
+    --ink:#1B211E;
+    --muted:#6B7269;
+    --line:#CFD2C8;
+    --line-strong:#BCC0B4;
+    --green:#2E6B4D;
+    --amber:#9A6B16;
+    --red:#A33A2B;
+    --green-soft:#E3EEE6;
+    --red-soft:#F2E4E1;
+    --amber-soft:#F1E9D8;
+    --serif:Georgia,'Iowan Old Style','Palatino Linotype','Times New Roman',serif;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;
+    --mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink)}
+  body{
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    padding:22px 18px 44px;max-width:540px;margin:0 auto;line-height:1.5;
+  }
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px}
+  h1{font-family:var(--serif);font-weight:700;font-size:clamp(27px,7.5vw,34px);line-height:1.05;letter-spacing:-.01em;margin-bottom:8px}
+  .lede{font-size:14.5px;color:var(--muted);max-width:42ch;margin-bottom:22px}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+  .panel-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:14px}
+
+  /* presets */
+  .preset-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .chip{
+    display:inline-flex;align-items:center;gap:7px;
+    background:#fff;border:1px solid var(--line-strong);border-radius:999px;
+    padding:7px 7px 7px 13px;font-size:13px;font-weight:600;cursor:pointer;
+    font-family:var(--mono);
+  }
+  .chip:active{background:#F0F0EA}
+  .chip .x{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:18px;height:18px;border-radius:50%;background:#E7E7E0;color:var(--muted);
+    font-size:12px;line-height:1;font-family:var(--sans);
+  }
+  .chip.empty{color:var(--muted);font-style:italic;font-family:var(--sans);font-weight:500;border-style:dashed;cursor:default}
+  .save-row{display:flex;gap:8px}
+  .save-row input{
+    flex:1;font-family:var(--mono);font-weight:700;font-size:14px;text-transform:uppercase;
+    background:#fff;border:1px solid var(--line-strong);border-radius:9px;padding:10px 12px;
+  }
+  .save-row input:focus{outline:2px solid var(--ink);outline-offset:1px}
+  .save-row button{
+    background:var(--ink);color:#F4F4EF;border:none;border-radius:9px;
+    padding:0 16px;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap;
+  }
+  .save-row button:active{opacity:.85}
+  .save-hint{font-size:11px;color:var(--muted);margin-top:8px}
+
+  /* inputs */
+  .inputs{display:flex;gap:12px}
+  .field{flex:1}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .field .wrap{position:relative;display:flex;align-items:center}
+  .field .pre{position:absolute;left:12px;color:var(--muted);font-family:var(--mono);font-size:15px}
+  .field input{
+    width:100%;font-family:var(--mono);font-weight:700;font-size:18px;color:var(--ink);
+    background:#fff;border:1px solid var(--line-strong);border-radius:9px;padding:11px 12px 11px 26px;
+    -moz-appearance:textfield;
+  }
+  .field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .field input:focus{outline:2px solid var(--ink);outline-offset:1px}
+
+  /* sliders */
+  .slider-block{margin-top:18px}
+  .slider-block:first-child{margin-top:0}
+  .slider-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .slider-top .name{font-size:14px;font-weight:500}
+  .slider-top .val{font-family:var(--mono);font-weight:700;font-size:17px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;cursor:pointer}
+  input[type=range]::-webkit-slider-runnable-track{height:4px;background:var(--line-strong);border-radius:4px}
+  input[type=range]::-moz-range-track{height:4px;background:var(--line-strong);border-radius:4px}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;background:var(--ink);border:3px solid var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.25);margin-top:-10px}
+  input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;border:3px solid var(--panel);background:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .slider-foot{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:2px}
+
+  /* result */
+  .result{text-align:center;padding-top:4px}
+  .floor{font-size:13px;color:var(--muted);margin-bottom:14px}
+  .floor b{font-family:var(--mono);color:var(--ink);font-weight:700}
+  .fair-cap{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:2px}
+  .fair{font-family:var(--serif);font-weight:700;font-size:clamp(42px,14vw,56px);line-height:1;letter-spacing:-.01em}
+  .verdict{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:7px 15px;border-radius:999px;font-weight:600;font-size:14.5px;color:#fff;transition:background-color .25s ease}
+  .verdict .pct{font-family:var(--mono);font-weight:700;opacity:.92}
+  .spectrum{margin-top:22px}
+  .bar{position:relative;height:10px;border-radius:6px;background:linear-gradient(90deg,var(--green) 0%,var(--green) 30%,var(--amber) 45%,var(--amber) 55%,var(--red) 70%,var(--red) 100%)}
+  .marker{position:absolute;top:-7px;width:4px;height:24px;border-radius:3px;background:var(--ink);border:2px solid var(--panel);transform:translateX(-50%);transition:left .25s ease}
+  .bar-ends{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:9px}
+  .bar-cap{text-align:center;font-size:12.5px;color:var(--muted);margin-top:12px}
+  .bar-cap b{color:var(--ink);font-family:var(--mono);font-weight:700}
+
+  /* spectrum table */
+  .tbl{width:100%;border-collapse:collapse;font-size:14px}
+  .tbl th{text-align:left;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:0 0 8px}
+  .tbl th.r,.tbl td.r{text-align:right}
+  .tbl td{padding:9px 0;border-top:1px solid var(--line);font-family:var(--mono);font-weight:700}
+  .tbl tr.below td{color:var(--red)}
+  .tbl tr.above td{color:var(--green)}
+  .tbl tr.cross td{background:var(--ink);color:#F4F4EF}
+  .tbl tr.cross td:first-child{border-top-left-radius:8px;border-bottom-left-radius:8px;padding-left:10px}
+  .tbl tr.cross td:last-child{border-top-right-radius:8px;border-bottom-right-radius:8px;padding-right:10px}
+  .tbl .tag{font-family:var(--sans);font-weight:600;font-size:11px;color:#A9B0A6;display:block;margin-top:2px}
+  .tbl-note{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5}
+
+  /* hero */
+  .hero{background:var(--ink);color:#F4F4EF;border-radius:14px;padding:22px 20px;margin-bottom:14px}
+  .hero .k{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#A9B0A6;font-weight:700;margin-bottom:10px}
+  .hero .big{font-family:var(--serif);font-weight:700;font-size:clamp(21px,6vw,26px);line-height:1.25}
+  .hero .big em{font-style:normal;color:#8FD3AC;font-family:var(--mono);font-weight:700}
+  .hero .sub{font-size:13.5px;color:#B9BFB4;margin-top:12px;line-height:1.55}
+
+  .note{font-size:12px;color:var(--muted);line-height:1.6;padding:0 4px}
+  .note b{color:var(--ink);font-weight:600}
+  .note hr{border:none;border-top:1px solid var(--line);margin:12px 0}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+  <div class="eyebrow">Intjäningsvärde</div>
+  <h1>Vad är aktien värd?</h1>
+  <p class="lede">Värderat utifrån vad bolaget faktiskt tjänar — inte vad någon hoppas. Dra i reglagen och se priset svänga.</p>
+
+  <div class="panel">
+    <div class="panel-label">Sparade bolag</div>
+    <div class="preset-row" id="presetRow"></div>
+    <div class="save-row">
+      <input id="tickerName" type="text" placeholder="TICKER" maxlength="8" autocomplete="off">
+      <button id="saveBtn">Spara nuvarande</button>
+    </div>
+    <div class="save-hint" id="saveHint">Tryck på ett sparat bolag för att ladda det.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">Bolagets siffror</div>
+    <div class="inputs">
+      <div class="field">
+        <label>Vinst per aktie (EPS)</label>
+        <div class="wrap"><span class="pre">$</span><input id="eps" type="number" inputmode="decimal" step="0.1" value="16.8"></div>
+      </div>
+      <div class="field">
+        <label>Dagens kurs</label>
+        <div class="wrap"><span class="pre">$</span><input id="price" type="number" inputmode="decimal" step="1" value="356"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">Dina antaganden</div>
+    <div class="slider-block">
+      <div class="slider-top"><span class="name">Avkastningskrav</span><span class="val mono" id="rOut">8 %</span></div>
+      <input id="r" type="range" min="5" max="12" step="0.5" value="8">
+      <div class="slider-foot"><span>Nöjd med lite</span><span>Kräver mycket</span></div>
+    </div>
+    <div class="slider-block">
+      <div class="slider-top"><span class="name">Tillväxt per år</span><span class="val mono" id="gOut">10 %</span></div>
+      <input id="g" type="range" min="0" max="15" step="0.5" value="10">
+      <div class="slider-foot"><span>Ingen tillväxt</span><span>Snabbväxare</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="result">
+      <div class="floor">Utan tillväxt vore den värd <b id="floorVal">$210</b></div>
+      <div class="fair-cap">Med din tillväxt</div>
+      <div class="fair mono" id="fairVal">$479</div>
+      <div class="verdict" id="verdict"><span id="vText">Billig</span><span class="pct" id="vPct">+31 % mot kurs</span></div>
+      <div class="spectrum">
+        <div class="bar"><div class="marker" id="marker" style="left:50%"></div></div>
+        <div class="bar-ends"><span>Billig</span><span>Rättvist</span><span>Dyr</span></div>
+        <div class="bar-cap">Markören = dagens kurs mot ditt rättvisa värde <b id="capVal">$479</b></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">Hela tillväxtspannet</div>
+    <table class="tbl">
+      <thead><tr><th>Tillväxt/år</th><th class="r">Rättvist värde</th></tr></thead>
+      <tbody id="tblBody"></tbody>
+    </table>
+    <div class="tbl-note">Grönt = vid den tillväxten är aktien billig mot dagens kurs. Rött = dyr. Den mörka raden är brytpunkten kursen faktiskt kräver.</div>
+  </div>
+
+  <div class="hero">
+    <div class="k">Den enda fråga som spelar roll</div>
+    <div class="big">Dagens kurs förutsätter att vinsten växer <em id="beGrowth">6,3 %</em> per år — för all framtid.</div>
+    <div class="sub" id="heroSub">Tror du på mer? Då är aktien billig. Tror du på mindre? Då betalar du för en berättelse marknaden redan tagit ut i förskott.</div>
+  </div>
+
+  <div class="note">
+    <b>Tre saker att hålla koll på:</b> EPS är <b>bokföringsvinst, inte kassa</b> — kolla att fritt kassaflöde inte ligger långt under vinsten innan du litar på siffran. EPS kan vara tillfälligt hög eller låg ett enskilt år — ta hellre ett snitt över flera år för cykliska bolag. Och formeln (Grahams gamla tumregel) är trubbig: den är till för magkänsla och storleksordning, inte en exakt prislapp.
+    <hr>
+    Allmän analys, inte köpråd.
+  </div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const eps=$('eps'),price=$('price'),r=$('r'),g=$('g');
+  const STORE='epv_presets_v1';
+  let storageOK=true;
+
+  const fmtPct=n=>(Math.abs(n%1)<1e-9?n.toFixed(0):n.toFixed(1).replace('.',','))+' %';
+  const usd=n=>'$'+Math.round(n).toLocaleString('sv-SE').replace(/\u00A0/g,' ');
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+  /* ---------- presets ---------- */
+  function loadPresets(){
+    try{return JSON.parse(localStorage.getItem(STORE))||[];}
+    catch(e){return [];}
+  }
+  function savePresets(list){
+    try{localStorage.setItem(STORE,JSON.stringify(list));}
+    catch(e){storageOK=false;}
+  }
+  function seedIfEmpty(){
+    let list=loadPresets();
+    if(list.length===0 && storageOK){
+      list=[{t:'MSFT',e:16.8,p:356,r:8,g:10}];
+      savePresets(list);
+    }
+    return list;
+  }
+  function renderPresets(){
+    const row=$('presetRow');
+    const list=loadPresets();
+    row.innerHTML='';
+    if(list.length===0){
+      const span=document.createElement('span');
+      span.className='chip empty';
+      span.textContent='Inga sparade än';
+      row.appendChild(span);
+      return;
+    }
+    list.forEach((p,i)=>{
+      const chip=document.createElement('span');
+      chip.className='chip';
+      chip.innerHTML=p.t+' <span class="x" data-i="'+i+'">×</span>';
+      chip.addEventListener('click',ev=>{
+        if(ev.target.classList.contains('x')){
+          const l=loadPresets(); l.splice(i,1); savePresets(l); renderPresets(); return;
+        }
+        eps.value=p.e; price.value=p.p; r.value=p.r; g.value=p.g; compute();
+      });
+      row.appendChild(chip);
+    });
+  }
+  $('saveBtn').addEventListener('click',()=>{
+    let name=($('tickerName').value||'').trim().toUpperCase();
+    if(!name) name='BOLAG';
+    const list=loadPresets().filter(p=>p.t!==name);
+    list.push({t:name,e:parseFloat(eps.value)||0,p:parseFloat(price.value)||0,r:parseFloat(r.value),g:parseFloat(g.value)});
+    savePresets(list);
+    if(!storageOK){
+      $('saveHint').textContent='Sparas bara när sidan ligger på en webbadress (https), inte som lokal fil.';
+      return;
+    }
+    $('tickerName').value='';
+    renderPresets();
+  });
+
+  /* ---------- core calc ---------- */
+  const GROWTHS=[0,2.5,5,7.5,10,12.5,15];
+
+  function compute(){
+    const E=parseFloat(eps.value)||0;
+    const P=parseFloat(price.value)||0;
+    const R=parseFloat(r.value);
+    const G=parseFloat(g.value);
+
+    $('rOut').textContent=fmtPct(R);
+    $('gOut').textContent=fmtPct(G);
+
+    const floor=R>0?E/(R/100):0;
+    $('floorVal').textContent=usd(floor);
+
+    const fair=E*(8.5+2*G);
+    $('fairVal').textContent=usd(fair);
+    $('capVal').textContent=usd(fair);
+
+    const diff=fair>0?(fair-P)/P:0;
+    let text,color;
+    if(diff>0.10){text='Billig';color='var(--green)';}
+    else if(diff<-0.10){text='Dyr';color='var(--red)';}
+    else{text='Rättvist värderad';color='var(--amber)';}
+    $('vText').textContent=text;
+    $('vPct').textContent=(diff>=0?'+':'')+fmtPct(diff*100)+' mot kurs';
+    $('verdict').style.background=color;
+
+    const ratio=fair>0?P/fair:1;
+    $('marker').style.left=(clamp((ratio-0.6)/0.8,0,1)*100)+'%';
+
+    const be=E>0?((P/E)-8.5)/2:0;
+    $('beGrowth').textContent=be<=0?'noll':fmtPct(be);
+
+    let sub;
+    if(be<=0) sub='Marknaden prisar in att vinsten aldrig växer — eller krymper. Ovanligt lågt ställda förväntningar.';
+    else if(diff>0.10) sub='Din tillväxttro ligger över vad kursen kräver. På den synen är aktien billig.';
+    else if(diff<-0.10) sub='Din tillväxttro ligger under vad kursen kräver. På den synen betalar du för en berättelse marknaden redan tagit ut i förskott.';
+    else sub='Din tillväxttro matchar i stort vad kursen kräver. Då är priset ungefär rätt — varken fynd eller fälla.';
+    $('heroSub').textContent=sub;
+
+    // spectrum table
+    const body=$('tblBody');
+    body.innerHTML='';
+    let crossed=false;
+    GROWTHS.forEach(gr=>{
+      const fv=E*(8.5+2*gr);
+      const tr=document.createElement('tr');
+      let cls;
+      if(!crossed && fv>=P){ cls='cross'; crossed=true; }
+      else if(fv>=P) cls='above';
+      else cls='below';
+      tr.className=cls;
+      const tag=cls==='cross'?'<span class="tag">≈ vad kursen kräver</span>':'';
+      tr.innerHTML='<td>'+fmtPct(gr)+tag+'</td><td class="r">'+usd(fv)+'</td>';
+      body.appendChild(tr);
+    });
+  }
+
+  [eps,price,r,g].forEach(el=>el.addEventListener('input',compute));
+
+  // init
+  try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); }catch(e){ storageOK=false; }
+  if(!storageOK){ $('saveHint').textContent='Sparade bolag fungerar när sidan ligger på en webbadress (https). Som lokal fil sparas inget.'; }
+  seedIfEmpty();
+  renderPresets();
+  compute();
+</script>
+</body>
+</html>
