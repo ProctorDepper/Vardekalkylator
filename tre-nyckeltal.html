@@ -185,7 +185,7 @@ async function fetchFundamentals(){
   if(!tk){st.textContent='Ange en ticker först.';return;}
   st.textContent='Hämtar '+tk+' …';btn.disabled=true;
   try{
-    const r=await fetch(API_BASE+'/api/fundamentals?ticker='+encodeURIComponent(tk));
+    const r=await fetch(API_BASE+'/api/fundamentals?ticker='+encodeURIComponent(tk),{cache:'no-store'});
     const d=await r.json();
     if(!r.ok||d.error)throw new Error(d.error||('HTTP '+r.status));
     setMode('direct');
