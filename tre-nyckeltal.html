@@ -191,6 +191,7 @@ async function fetchFundamentals(){
     setMode('direct');
     if(d.price!=null)document.getElementById('price').value=d.price;
     if(d.eps!=null)document.getElementById('eps').value=d.eps;
+    if(d.price!=null&&d.eps)document.getElementById('pe').value=(d.price/d.eps).toFixed(1);
     if(d.roe_avg!=null)document.getElementById('roe').value=d.roe_avg;
     if(d.payout!=null)document.getElementById('payout').value=d.payout;
     if(d.nd_ebitda!=null)document.getElementById('nd').value=d.nd_ebitda;
@@ -229,6 +230,7 @@ function calc(){
   // ROE → g
   const roe=num('roe'), payout=Math.min(Math.max(num('payout'),0),100);
   let g=Math.min(Math.max(roe*(1-payout/100),0),3); // % units, cap 3
+  $('gV').textContent=fmt(Math.min(Math.max(roe*(1-payout/100),0),3),1)+' %';
   $('roeTag').textContent = roe>=15?'STARK · ≥15 %':(roe>=10?'OK · 10–15 %':'SVAG · <10 %');
   $('roeTag').className='tag '+(roe>=15?'g':roe>=10?'y':'r');
 
