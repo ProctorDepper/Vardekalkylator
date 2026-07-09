@@ -215,7 +215,7 @@ async function fetchFundamentals(){
     if(d.payout!=null)document.getElementById('payout').value=d.payout;
     if(d.nd_ebitda!=null)document.getElementById('nd').value=d.nd_ebitda;
     fetched={epsTTM:d.eps??null,epsAvg:d.eps_avg??null,epsYears:d.eps_years||0};
-    let msg='Hämtat '+tk+(d.currency?' ('+d.currency+')':'');
+    let msg='Hämtat '+tk+(d.name?' ('+d.name+')':'')+(d.currency?' · '+d.currency:'');
     if(d.roe_years)msg+=' · ROE-snitt '+d.roe_years+' år';
     if(d.nd_ebitda==null)msg+=' · nettoskuld/EBITDA saknas — fyll i manuellt';
     st.textContent=msg;
