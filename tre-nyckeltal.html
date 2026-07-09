@@ -56,6 +56,12 @@
 
   .derived{font-size:12px;color:var(--dim);font-family:var(--mono);margin-top:2px}
   .derived b{color:var(--fg)}
+  .anchor{font-size:12px;font-family:var(--mono);color:var(--dim);margin-top:6px;display:none}
+  .anchor u{color:var(--blue);text-decoration:underline;cursor:pointer}
+
+  .switchrow{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--dim)}
+  .switchrow input{accent-color:var(--amber);width:18px;height:18px}
+  .switchnote{font-size:11.5px;font-family:var(--mono);color:var(--dim);margin-top:3px}
 
   /* Result */
   #result{background:linear-gradient(180deg,var(--panel) 0%,#131a24 100%);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:6px}
@@ -75,6 +81,9 @@
   .gauge-labels{display:flex;justify-content:space-between;font-size:10.5px;font-family:var(--mono);color:var(--dim);margin-top:8px}
   .mos-line{margin-top:12px;font-size:14px}
   .mos-line b{font-family:var(--mono)}
+
+  .implied{margin-top:12px;font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;color:var(--dim)}
+  .implied b{font-family:var(--mono);color:var(--fg)}
 
   .breakdown{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
   .brow{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;color:var(--dim)}
@@ -119,6 +128,7 @@
     <div class="slider-line"><label for="norm" style="margin:0">Normalisering av vinstnivå</label><b id="normV">85 %</b></div>
     <input type="range" id="norm" min="50" max="110" value="85" oninput="calc()">
     <div class="slider-line"><span>Cykeltopp → dra ner</span><span>Cykelbotten → dra upp</span></div>
+    <div class="anchor" id="anchor"></div>
   </div>
   <div class="derived">Normaliserad EPS: <b id="epsNorm">—</b></div>
 </div>
@@ -130,8 +140,13 @@
     <div class="field"><label for="roe">ROE, snitt 5 år (%)</label><input type="number" id="roe" value="15" step="0.5" inputmode="decimal" oninput="calc()"></div>
     <div class="field"><label for="payout">Utdelningsandel (%)</label><input type="number" id="payout" value="50" step="5" inputmode="decimal" oninput="calc()"></div>
   </div>
-  <div class="derived">Uthållig tillväxt g = ROE × (1 − utdelning), tak 3 %: <b id="gV">—</b></div>
+  <div class="derived">Uthållig tillväxt g = ROE × (1 − utdelning), tak <b id="capV">3 %</b>: <b id="gV">—</b></div>
   <span class="tag" id="roeTag"></span>
+  <div class="switchrow">
+    <input type="checkbox" id="comp" onchange="calc()">
+    <label for="comp" style="margin:0;font-size:12.5px">Compounder-undantag: tillåt g upp till 6 %</label>
+  </div>
+  <div class="switchnote" id="compNote"></div>
 </div>
 
 <!-- 3. Skuld -->
@@ -161,6 +176,8 @@
   </div>
   <div class="mos-line">Säkerhetsmarginal: <b id="mosV">—</b></div>
 
+  <div class="implied" id="implied" style="display:none"></div>
+
   <div class="breakdown">
     <div class="brow"><span>Normaliserad EPS × (1+g)</span><b id="b1">—</b></div>
     <div class="brow"><span>Tillväxt g</span><b id="b2">—</b></div>
@@ -171,12 +188,14 @@
 </div>
 
 <footer>
-  Modell: motiverat värde = normaliserad EPS × (1+g) / (avkastningskrav − g). Tillväxt cappad vid 3 %, minsta spread 5 %. Skuldpåslag +0,5 pp per varv nettoskuld/EBITDA över 1×, nettokassa ger −0,5 pp. Verktyget är ett räknestöd, inte rådgivning. Banker och fastighetsbolag: modellen är olämplig (EBITDA/skuldlogik gäller ej).
+  Modell: motiverat värde = normaliserad EPS × (1+g) / (avkastningskrav − g). Tillväxt cappad vid 3 % (6 % med compounder-undantag: kräver ROE-snitt ≥ 20 % och nettoskuld/EBITDA &lt; 1). Minsta spread 5 %. Skuldpåslag +0,5 pp per varv nettoskuld/EBITDA över 1×, nettokassa ger −0,5 pp. Verktyget är ett räknestöd, inte rådgivning. Banker och fastighetsbolag: modellen är olämplig (EBITDA/skuldlogik gäller ej).
 </footer>
 
 <script>
 // Byt till din Render-domän för AlertBird-backenden:
 const API_BASE='https://alertbird.tech';
+
+let fetched={epsTTM:null,epsAvg:null,epsYears:0}; // ankare från senaste hämtning
 
 async function fetchFundamentals(){
   const tk=document.getElementById('ticker').value.trim().toUpperCase();
@@ -195,10 +214,11 @@ async function fetchFundamentals(){
     if(d.roe_avg!=null)document.getElementById('roe').value=d.roe_avg;
     if(d.payout!=null)document.getElementById('payout').value=d.payout;
     if(d.nd_ebitda!=null)document.getElementById('nd').value=d.nd_ebitda;
+    fetched={epsTTM:d.eps??null,epsAvg:d.eps_avg??null,epsYears:d.eps_years||0};
     let msg='Hämtat '+tk+(d.currency?' ('+d.currency+')':'');
     if(d.roe_years)msg+=' · ROE-snitt '+d.roe_years+' år';
     if(d.nd_ebitda==null)msg+=' · nettoskuld/EBITDA saknas — fyll i manuellt';
-    st.textContent=msg+' · EPS är rapporterad TTM — justera normaliseringen själv.';
+    st.textContent=msg;
     calc();
   }catch(e){
     st.textContent='Kunde inte hämta '+tk+' — fyll i manuellt. ('+e.message+')';
@@ -218,6 +238,8 @@ const $=id=>document.getElementById(id);
 const num=id=>parseFloat($(id).value)||0;
 const fmt=(x,d=2)=>x.toLocaleString('sv-SE',{minimumFractionDigits:d,maximumFractionDigits:d});
 
+function setNorm(p){ $('norm').value=Math.min(Math.max(Math.round(p),50),110); calc(); }
+
 function calc(){
   const price=num('price');
   const normPct=num('norm')/100;
@@ -227,15 +249,42 @@ function calc(){
   const epsN = epsRaw*normPct;
   $('epsNorm').textContent = epsN>0 ? fmt(epsN)+' kr' : '—';
 
-  // ROE → g
-  const roe=num('roe'), payout=Math.min(Math.max(num('payout'),0),100);
-  let g=Math.min(Math.max(roe*(1-payout/100),0),3); // % units, cap 3
-  $('gV').textContent=fmt(Math.min(Math.max(roe*(1-payout/100),0),3),1)+' %';
-  $('roeTag').textContent = roe>=15?'STARK · ≥15 %':(roe>=10?'OK · 10–15 %':'SVAG · <10 %');
-  $('roeTag').className='tag '+(roe>=15?'g':roe>=10?'y':'r');
+  // EPS-ankare: TTM vs flerårssnitt från senaste hämtningen
+  const an=$('anchor');
+  if(fetched.epsTTM&&fetched.epsAvg&&fetched.epsTTM>0){
+    const suggested=Math.round(100*fetched.epsAvg/fetched.epsTTM);
+    an.style.display='block';
+    an.innerHTML='TTM: <b>'+fmt(fetched.epsTTM)+'</b> · Snitt '+fetched.epsYears+' år: <b>'+fmt(fetched.epsAvg)+
+      '</b> (motsvarar <u onclick="setNorm('+suggested+')">'+suggested+' %</u>)';
+  } else { an.style.display='none'; }
 
-  // Debt → required return
+  // ROE + compounder-undantag → g
+  const roe=num('roe'), payout=Math.min(Math.max(num('payout'),0),100);
   const nd=num('nd');
+  const compOn=$('comp').checked;
+  const compEligible = roe>=20 && nd<1;
+  let cap=3;
+  const note=$('compNote');
+  if(compOn){
+    if(compEligible){ cap=6; note.textContent='Aktivt: ROE ≥ 20 % och skuld < 1× uppfyllt → g-tak 6 %.'; note.style.color='var(--green)'; }
+    else { note.textContent='Ej uppfyllt (kräver ROE-snitt ≥ 20 % och nettoskuld/EBITDA < 1) → tak kvar på 3 %.'; note.style.color='var(--amber)'; }
+  } else { note.textContent=''; }
+  $('capV').textContent=cap+' %';
+
+  let g=Math.min(Math.max(roe*(1-payout/100),0),cap); // % units
+  $('gV').textContent=fmt(g,1)+' %';
+
+  // Hävstångsvarning: hög ROE + hög skuld
+  const levered = roe>=15 && nd>2;
+  if(levered){
+    $('roeTag').textContent='HÖG · HÄVSTÅNGSDRIVEN?';
+    $('roeTag').className='tag y';
+  } else {
+    $('roeTag').textContent = roe>=15?'STARK · ≥15 %':(roe>=10?'OK · 10–15 %':'SVAG · <10 %');
+    $('roeTag').className='tag '+(roe>=15?'g':roe>=10?'y':'r');
+  }
+
+  // Skuld → avkastningskrav
   let debtAdd = nd<0 ? -0.5 : Math.min(Math.max(nd-1,0)*0.5,3);
   const reqBase=num('req');
   $('reqV').textContent=fmt(reqBase,1).replace('.',',')+' %';
@@ -245,12 +294,12 @@ function calc(){
   $('debtTag').textContent = nd<0?'NETTOKASSA':(nd<1?'STARK · <1×':(nd<=2?'OK · 1–2×':(nd<=3?'HÖG · 2–3×':'RISKABEL · >3×')));
   $('debtTag').className='tag '+(nd<1?'g':nd<=2?'y':'r');
 
-  // ROE below required return → retained earnings destroy value
+  // ROE under kravet → behållen vinst förstör värde
   const roeBelow = roe < req;
   $('warnRoe').style.display = roeBelow ? 'block':'none';
   if(roeBelow) g=0;
 
-  const spread=Math.max(req-g,5); // min 5% spread, % units
+  const spread=Math.max(req-g,5);
   const fair = epsN>0 ? epsN*(1+g/100)/(spread/100) : 0;
 
   $('fairV').textContent = fair>0 ? fmt(fair,0)+' kr' : '—';
@@ -260,12 +309,28 @@ function calc(){
   $('b3').textContent = fmt(req,1)+' %';
   $('b4').textContent = fmt(spread,1)+' %';
 
-  // Margin of safety
+  // Säkerhetsmarginal
   const mos = fair>0 ? (fair-price)/fair*100 : 0;
   $('mosV').textContent = fmt(mos,1)+' %';
   $('mosV').style.color = mos>=30?'var(--green)':(mos>=10?'var(--amber)':'var(--red)');
 
-  // Gauge: map mos from -50%..+60% onto 0..100%
+  // Implicit tillväxt: vilket evigt g kräver dagens kurs?
+  // price = E(1+g)/(r−g) → g = (price·r − E)/(price + E), decimala enheter
+  const imp=$('implied');
+  if(epsN>0&&price>0){
+    const rDec=req/100;
+    const gImp=100*(price*rDec-epsN)/(price+epsN);
+    imp.style.display='block';
+    if(gImp<=0){
+      imp.innerHTML='Kursen förutsätter <b>ingen tillväxt alls</b> (implicit g ≈ '+fmt(gImp,1)+' %) — marknaden prissätter stagnation eller vinstfall.';
+    } else if(gImp<=g+0.05){
+      imp.innerHTML='Kursen förutsätter implicit tillväxt <b>'+fmt(gImp,1)+' %</b> — inom modellens antagande ('+fmt(g,1)+' %). Marginalen kräver ingen tillväxttro.';
+    } else {
+      imp.innerHTML='Kursen förutsätter <b>'+fmt(gImp,1)+' % evig tillväxt</b>, mot modellens '+fmt(g,1)+' %. Gapet är tillväxtens prislapp — tror du på den?';
+    }
+  } else { imp.style.display='none'; }
+
+  // Mätare: mappa mos från −50 %..+60 % till 0..100 %
   let pos=(mos+50)/110*100; pos=Math.min(Math.max(pos,1),99);
   $('pin').style.left=pos+'%';
 
