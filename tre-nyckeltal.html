@@ -37,6 +37,7 @@
   label{display:block;font-size:12px;color:var(--dim);margin-bottom:4px}
   input[type=number],input[type=text]{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--fg);font-family:var(--mono);font-size:16px;padding:9px 10px;outline:none}
   input[type=number]:focus,input[type=text]:focus{border-color:var(--amber)}
+  select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--fg);font-family:var(--mono);font-size:16px;padding:9px 6px;outline:none}
   .btn{width:100%;background:var(--amber);border:none;border-radius:8px;color:#161005;font-weight:700;font-size:14px;padding:10px 12px;cursor:pointer;font-family:var(--sans)}
   .btn:disabled{opacity:.5;cursor:wait}
   .btn:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
@@ -120,8 +121,9 @@
     <button id="mDerive" onclick="setMode('derive')">Härled från kurs + P/E</button>
   </div>
   <div class="row">
-    <div class="field"><label for="price">Aktiekurs</label><input type="number" id="price" value="100" step="0.1" inputmode="decimal" oninput="calc()"></div>
-    <div class="field" id="epsField"><label for="eps">Rapporterad EPS</label><input type="number" id="eps" value="8" step="0.1" inputmode="decimal" oninput="calc()"></div>
+    <div class="field"><label for="price">Aktiekurs</label><input type="number" id="price" value="100" step="0.01" inputmode="decimal" oninput="calc()"></div>
+    <div class="field" style="flex:0 0 76px"><label for="cur">Valuta</label><select id="cur" onchange="calc()"><option value="SEK">kr</option><option value="EUR">€</option><option value="USD">$</option><option value="NOK">NOK</option><option value="DKK">DKK</option></select></div>
+    <div class="field" id="epsField"><label for="eps">Rapporterad EPS</label><input type="number" id="eps" value="8" step="0.01" inputmode="decimal" oninput="calc()"></div>
     <div class="field" id="peField" style="display:none"><label for="pe">P/E (aktuellt)</label><input type="number" id="pe" value="12.5" step="0.1" inputmode="decimal" oninput="calc()"></div>
   </div>
   <div class="field">
@@ -214,6 +216,9 @@ async function fetchFundamentals(){
     if(d.roe_avg!=null)document.getElementById('roe').value=d.roe_avg;
     if(d.payout!=null)document.getElementById('payout').value=d.payout;
     if(d.nd_ebitda!=null)document.getElementById('nd').value=d.nd_ebitda;
+    if(d.currency){const c=String(d.currency).toUpperCase(),sel=$('cur');
+      if(![...sel.options].some(o=>o.value===c))sel.add(new Option(c,c));
+      sel.value=c;}
     fetched={epsTTM:d.eps??null,epsAvg:d.eps_avg??null,epsYears:d.eps_years||0};
     let msg='Hämtat '+tk+(d.name?' ('+d.name+')':'')+(d.currency?' · '+d.currency:'');
     if(d.roe_years)msg+=' · ROE-snitt '+d.roe_years+' år';
@@ -237,6 +242,10 @@ function setMode(m){
 const $=id=>document.getElementById(id);
 const num=id=>parseFloat($(id).value)||0;
 const fmt=(x,d=2)=>x.toLocaleString('sv-SE',{minimumFractionDigits:d,maximumFractionDigits:d});
+const CUR_SYM={SEK:'kr',EUR:'€',USD:'$',NOK:'NOK',DKK:'DKK'};
+const cur=()=>{const c=$('cur').value;return CUR_SYM[c]||c;};
+// Belopp: decimaler efter storlek, så att lågt prissatta aktier inte avrundas bort
+const money=x=>{const a=Math.abs(x),d=a<100?2:a<1000?1:0;return fmt(x,d)+' '+cur();};
 
 function setNorm(p){ $('norm').value=Math.min(Math.max(Math.round(p),50),110); calc(); }
 
@@ -247,7 +256,7 @@ function calc(){
 
   let epsRaw = mode==='direct' ? num('eps') : (num('pe')>0 ? price/num('pe') : 0);
   const epsN = epsRaw*normPct;
-  $('epsNorm').textContent = epsN>0 ? fmt(epsN)+' kr' : '—';
+  $('epsNorm').textContent = epsN>0 ? money(epsN) : '—';
 
   // EPS-ankare: TTM vs flerårssnitt från senaste hämtningen
   const an=$('anchor');
@@ -302,9 +311,9 @@ function calc(){
   const spread=Math.max(req-g,5);
   const fair = epsN>0 ? epsN*(1+g/100)/(spread/100) : 0;
 
-  $('fairV').textContent = fair>0 ? fmt(fair,0)+' kr' : '—';
-  $('priceEcho').textContent = fmt(price,0)+' kr';
-  $('b1').textContent = fmt(epsN*(1+g/100))+' kr';
+  $('fairV').textContent = fair>0 ? money(fair) : '—';
+  $('priceEcho').textContent = money(price);
+  $('b1').textContent = money(epsN*(1+g/100));
   $('b2').textContent = fmt(g,1)+' %';
   $('b3').textContent = fmt(req,1)+' %';
   $('b4').textContent = fmt(spread,1)+' %';
